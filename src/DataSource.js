@@ -30,9 +30,12 @@ function DataSource(name, basic_metrics) {
         return this.top_data_file;
     };
     
-    this.basic_metrics = basic_metrics;
-    this.getMetrics = function() {
-        return this.basic_metrics;
+    this.getMetrics = function() {return this.basic_metrics;};
+    this.setMetrics = function(metrics) {this.basic_metrics = metrics;};
+    
+    this.setMetricsDefinition = function(metrics) {
+        if (metrics === undefined) return;
+        this.setMetrics(metrics);
     };
     
     this.data_file = this.data_dir + '/'+this.name+'-evolutionary.json';
@@ -47,9 +50,30 @@ function DataSource(name, basic_metrics) {
     this.getData = function() {
         return this.data;
     };
+    
+    function nameSpaceMetrics(plain_metrics, ds) {
+        // If array, no data available
+        if (plain_metrics instanceof Array) 
+            return plain_metrics;
+        var metrics = {};
+        $.each(plain_metrics, function (name, value) {
+            var basic_name = name;
+            // commits_7, commits_30 ....
+            var aux = name.split("_");
+            if (isNaN(aux[aux.length-1]) === false)
+                basic_name = aux.slice(0,aux.length-1).join("_"); 
+            var ns_basic_name = ds.getName()+"_"+basic_name;
+            var ns_name = ds.getName()+"_"+name;
+            if (ds.getMetrics()[ns_basic_name] === undefined)
+                metrics[name] = value;
+            else metrics[ns_name] = value;
+        });
+        return metrics;
+    }
+    
     this.setData = function(load_data, self) {
         if (self === undefined) self = this;
-        self.data = load_data;
+        self.data = nameSpaceMetrics(load_data, self);
     };
     
     
@@ -95,7 +119,7 @@ function DataSource(name, basic_metrics) {
     };
     this.setGlobalData = function(data, self) {
         if (self === undefined) self = this;
-        self.global_data = data;
+        self.global_data = nameSpaceMetrics(data, self);
     };
     
     this.global_top_data = null;
@@ -190,7 +214,7 @@ function DataSource(name, basic_metrics) {
     this.companies_metrics_data = {};
     this.addCompanyMetricsData = function(company, data, self) {
         if (self === undefined) self = this;
-        self.companies_metrics_data[company] = data;
+        self.companies_metrics_data[company] = nameSpaceMetrics(data, self);
     };
     this.getCompaniesMetricsData = function() {
         return this.companies_metrics_data;
@@ -199,7 +223,7 @@ function DataSource(name, basic_metrics) {
     this.companies_global_data = {};
     this.addCompanyGlobalData = function(company, data, self) {
         if (self === undefined) self = this;
-        self.companies_global_data[company] = data;
+        self.companies_global_data[company] = nameSpaceMetrics(data, self);
     };
     this.getCompaniesGlobalData = function() {
         return this.companies_global_data;
@@ -241,7 +265,7 @@ function DataSource(name, basic_metrics) {
     this.repos_metrics_data = {};
     this.addRepoMetricsData = function(repo, data, self) {
         if (self === undefined) self = this;
-        self.repos_metrics_data[repo] = data;
+        self.repos_metrics_data[repo] = nameSpaceMetrics(data, self);
     };
     this.getReposMetricsData = function() {
         return this.repos_metrics_data;
@@ -250,7 +274,7 @@ function DataSource(name, basic_metrics) {
     this.repos_global_data = {};
     this.addRepoGlobalData = function(repo, data, self) {
         if (self === undefined) self = this;
-        self.repos_global_data[repo] = data;
+        self.repos_global_data[repo] =  nameSpaceMetrics(data, self);
     };
     this.getReposGlobalData = function() {
         return this.repos_global_data;
@@ -275,7 +299,7 @@ function DataSource(name, basic_metrics) {
     this.countries_metrics_data = {};
     this.addCountryMetricsData = function(country, data, self) {
         if (self === undefined) self = this;
-        self.countries_metrics_data[country] = data;
+        self.countries_metrics_data[country] = nameSpaceMetrics(data, self);
     };
     this.getCountriesMetricsData = function() {
         return this.countries_metrics_data;
@@ -284,14 +308,14 @@ function DataSource(name, basic_metrics) {
     this.countries_global_data = {};
     this.addCountryGlobalData = function(country, data, self) {
         if (self === undefined) self = this;
-        self.countries_global_data[country] = data;
+        self.countries_global_data[country] = nameSpaceMetrics(data, self);
     };
     this.getCountriesGlobalData = function() {
         return this.countries_global_data;
     };
 
 
-    // TODO: Move this login to Report
+    // TODO: Move this logic to Report
     this.getCompanyQuery = function () {
         var company = null;
         var querystr = window.location.search.substr(1);
@@ -323,7 +347,7 @@ function DataSource(name, basic_metrics) {
         if (order_by === undefined) order_by = metric_id;
         var companies_data = this.getCompaniesMetricsData();
         if (limit) {
-            var sorted_companies = this.sortCompanies(order_by);
+            var sorted_companies = DataProcess.sortCompanies(this, order_by);
             if (limit > sorted_companies.length) 
                 limit = sorted_companies.length; 
             var companies_data_limit = {};
@@ -355,7 +379,7 @@ function DataSource(name, basic_metrics) {
         if (order_by === undefined) order_by = metric_id;
         var repos_data = this.getReposMetricsData();
         if (limit) {
-            var sorted_repos = this.sortRepos(order_by);
+            var sorted_repos = DataProcess.sortRepos(this, order_by);
             if (limit > sorted_repos.length) 
                 limit = sorted_repos.length; 
             var repos_data_limit = {};
@@ -420,24 +444,25 @@ function DataSource(name, basic_metrics) {
         else return;
         if (limit) {
             var sorted = null;
+            var item = null;
             if (report=="companies")
-                sorted = this.sortCompanies(order_by);
+                sorted = DataProcess.sortCompanies(this, order_by);
             else if (report=="repos")
-                sorted = this.sortRepos(order_by);
+                sorted = DataProcess.sortRepos(this, order_by);
             else if (report=="countries")
-              sorted = this.sortCountries(order_by);            
+              sorted = DataProcess.sortCountries(this, order_by);            
             if (limit > sorted.length) limit = sorted.length; 
             var data_limit = {};
             for (var i=0; i<limit; i++) {
-                var item = sorted[i];
+                item = sorted[i];
                 data_limit[item] = data[item];
             }
 
             // Add a final companies_data for the sum of other values
             if (show_others) {
                 var others = 0;
-                for (var i=limit; i<sorted.length; i++) {
-                    var item = sorted[i];
+                for (var j=limit; j<sorted.length; j++) {
+                    item = sorted[j];
                     others += data[item][metric_id];
                 }
                 data_limit.others = {};
@@ -463,8 +488,13 @@ function DataSource(name, basic_metrics) {
     
     this.displayBasicMetricsPeople = function (upeople_id, upeople_identifier, metrics, div_id, config) {
         var json_file = "people-"+upeople_id+"-"+this.getName()+"-evolutionary.json";
-        $.getJSON(this.getDataDir()+"/"+json_file, null, function(history) {
+        var self = this;
+        $.when($.getJSON(this.getDataDir()+"/"+json_file)).done(function(history) {
+            history = nameSpaceMetrics(history, self);
             Viz.displayBasicMetricsPeople(upeople_identifier, metrics, history, div_id, config);
+        }).fail(function() {
+            $("#people").empty();
+            $("#people").html('No data available for people');
         });
     };
     
@@ -473,9 +503,23 @@ function DataSource(name, basic_metrics) {
                 this.getCountriesMetricsData()[country], div_id, config);
     };
 
-    this.displayBasicMetrics = function(metric_ids, div_target, config) {
-        Viz.displayBasicMetricsHTML(metric_ids, this.getData(),
-                div_target, config);
+    this.displayBasicMetrics = function(metric_ids, div_target, config, convert) {
+        var data = this.getData();
+        if (convert) {
+            if (convert === "aggregate")
+                data = DataProcess.aggregate(data, metric_ids);
+            if (convert === "substract") {
+                data = DataProcess.substract(data, metric_ids[0], metric_ids[1]);
+                metric_ids = ['substract'];
+            }
+            if (convert === "substract-aggregate") {
+                data = DataProcess.substract(data, metric_ids[0], metric_ids[1]);
+                metric_ids = ['substract'];
+                data = DataProcess.aggregate(data, metric_ids);
+            }
+
+        }
+        Viz.displayBasicMetricsHTML(metric_ids, data, div_target, config);
     };
 
     this.displayBasicMetricHTML = function(metric_id, div_target, config) {
@@ -497,55 +541,10 @@ function DataSource(name, basic_metrics) {
     this.displayBasic = function() {
         this.basicEvo(this.getData());
     };    
-    
-    this.sortCompanies = function(metric_id) {
-    	return this.sortGlobal(metric_id, "companies");
-    };
-    
-    this.sortRepos = function(metric_id) {
-    	return this.sortGlobal(metric_id, "repos");
-    };
-    
-    this.sortCountries = function(metric_id) {
-      return this.sortGlobal(metric_id, "countries");
-    };
-
-    this.sortGlobal = function (metric_id, kind) {
-        if (metric_id === undefined) metric_id = "commits";
-        var metric = [];
-        var sorted = [];
-        var global = null;
-        if (kind === "companies") {
-            global = this.getCompaniesGlobalData();
-            if (this.getCompaniesData().length === 0) return sorted;
-            if (global[this.getCompaniesData()[0]][metric_id] === undefined)
-                metric_id = "commits";
-        } 
-        else if (kind === "repos") {
-            global = this.getReposGlobalData();
-            if (this.getReposData().length === 0) return sorted;
-            if (global[this.getReposData()[0]][metric_id] === undefined)
-                metric_id = "commits";
-        }
-        else if (kind === "countries") {
-            global = this.getCountriesGlobalData();
-            if (this.getCountriesData().length === 0) return sorted;
-            if (global[this.getCountriesData()[0]][metric_id] === undefined)
-                metric_id = "commits";
-        }
-        $.each(global, function(item, data) {
-           metric.push([item, data[metric_id]]);
-        });
-        metric.sort(function(a, b) {return b[1] - a[1];});
-        $.each(metric, function(id, value) {
-            sorted.push(value[0]);
-        });
-        return sorted;
-    };
 
     this.displayCompaniesNav = function (div_nav, sort_metric) {
         var nav = "<span id='nav'></span>";
-        var sorted_companies = this.sortCompanies(sort_metric);
+        var sorted_companies = DataProcess.sortCompanies(this, sort_metric);
         $.each(sorted_companies, function(id, company) {
             nav += "<a href='#"+company+"-nav'>"+company + "</a> ";
         });
@@ -553,7 +552,7 @@ function DataSource(name, basic_metrics) {
     };
     
     this.displayCompaniesLinks = function (div_links, limit, sort_metric) {
-        var sorted_companies = this.sortCompanies(sort_metric);
+        var sorted_companies = DataProcess.sortCompanies(this, sort_metric);
         var links = "";
         var i = 0;
         $.each(sorted_companies, function(id, company) {
@@ -565,17 +564,17 @@ function DataSource(name, basic_metrics) {
     
     this.displayCountriesNav = function (div_nav, sort_metric) {
         var nav = "<span id='nav'></span>";
-        var sorted_countries = this.sortCountries(sort_metric);
+        var sorted_countries = DataProcess.sortCountries(this, sort_metric);
         $.each(sorted_countries, function(id, country) {
             nav += "<a href='#"+country+"-nav'>"+country + "</a> ";
         });
         $("#"+div_nav).append(nav);
     };
-
     
     this.displayReposNav = function (div_nav, sort_metric, scm_and_its) {
         var nav = "<span id='nav'></span>";
-        var sorted_repos = this.sortRepos(sort_metric);        
+        var sorted_repos = DataProcess.sortRepos(this, sort_metric);
+        var self = this;
         $.each(sorted_repos, function(id, repo) {
             if (scm_and_its && (!(Report.getReposMap()[repo]))) return;
             nav += "<a href='#" + repo + "-nav'>";
@@ -584,6 +583,9 @@ function DataSource(name, basic_metrics) {
                 var aux = repo.split("_");
                 label = aux.pop();
                 if (label === '') label = aux.pop();
+                if (self.getName() === "its") {
+                    label = label.replace('buglist.cgi?product=','');
+                }
                 // label = repo.substr(repo.lastIndexOf("_") + 1);
             }
             else if (repo.lastIndexOf("<") === 0)
@@ -620,15 +622,15 @@ function DataSource(name, basic_metrics) {
         var data = null, sorted = null;
         if (report === "companies") {
             data = this.getCompaniesMetricsData();
-            sorted = this.sortCompanies(sort_metric);
+            sorted = DataProcess.sortCompanies(this, sort_metric);
         }
         else if (report === "repos") {
             data = this.getReposMetricsData();
-            sorted = this.sortRepos(sort_metric);
+            sorted = DataProcess.sortRepos(this, sort_metric);
         }
         else if (report === "countries") {
             data = this.getCountriesMetricsData();
-            sorted = this.sortCountries(sort_metric);
+            sorted = DataProcess.sortCountries(this, sort_metric);
         } 
         else return;
 
@@ -637,19 +639,19 @@ function DataSource(name, basic_metrics) {
 
         $.each(sorted, function(id, item) {
             if (scm_and_its && (!(Report.getReposMap()[item]))) return;
-            list += "<div class='subreport-list' id='"+item+"-nav' style='height:175px'>";
-            list += "<div>";
+            list += "<div class='subreport-list' id='"+item+"-nav'>";
+            list += "<div style='float:left'>";
             if (report === "companies") 
                 list += "<a href='company.html?company="+item+"'>";
             else if (report === "repos") {
-        		list += "<a href='";
-        		// Show together SCM and ITS
-        		if ((ds.getName() === "scm" || ds.getName() === "its") &&
-        		     (Report.getReposMap().length === undefined)) ;
-        		else 
-        		    list += ds.getName()+"-";
-        		list += "repository.html";
-        		list += "?repository="+item;
+                list += "<a href='";
+                // Show together SCM and ITS
+                if ((ds.getName() === "scm" || ds.getName() === "its")
+                        && (Report.getReposMap().length === undefined));
+                else
+                    list += ds.getName() + "-";
+                list += "repository.html";
+                list += "?repository=" + encodeURIComponent(item);
                 list += "&data_dir=" + Report.getDataDir();
                 list += "'>";
             }
@@ -665,6 +667,9 @@ function DataSource(name, basic_metrics) {
                 var aux = item.split("_");
                 label = aux.pop();
                 if (label === '') label = aux.pop();
+                if (ds.getName() === "its") {
+                    label = label.replace('buglist.cgi?product=','');
+                }
                 // label = item.substr(item.lastIndexOf("_") + 1);
             }
             else if (item.lastIndexOf("<") === 0)
@@ -673,12 +678,10 @@ function DataSource(name, basic_metrics) {
             list += "</strong> +info</a>";
             list += "<br><a href='#nav'>^</a>";
             list += "</div>";
-            list += "<div style='height:150px;'>";
             $.each(metrics, function(id, metric) {
-                list += "<div id='"+item+"-"+metric+"' style='margin-right:30px;'";
+                list += "<div id='"+item+"-"+metric+"'";
                 list +=" class='subreport-list-item'></div>";
             });
-            list += "</div>";
             list += "</div>";
         });
         $("#"+div_id).append(list);
@@ -704,17 +707,21 @@ function DataSource(name, basic_metrics) {
             });
         });
     };
+
+    this.displayGlobalSummary = function(divid) {
+        this.displaySummary(null, divid, null, this);
+    };
     
     this.displayCompanySummary = function(divid, company, ds) {
-        this.displaySubReportSummary("companies",divid, company, ds);
+        this.displaySummary("companies",divid, company, ds);
     };
     
     this.displayRepoSummary = function(divid, repo, ds) {
-        this.displaySubReportSummary("repositories",divid, repo, ds);
+        this.displaySummary("repositories",divid, repo, ds);
     };
     
     this.displayCountrySummary = function(divid, repo, ds) {
-        this.displaySubReportSummary("countries",divid, repo, ds);
+        this.displaySummary("countries",divid, repo, ds);
     };
     
     // On demand file loading for people
@@ -722,7 +729,7 @@ function DataSource(name, basic_metrics) {
             upeople_identifier, ds) {
         var json_file = "people-"+upeople_id+"-"+ds.getName()+"-static.json";
         $.getJSON(this.getDataDir()+"/"+json_file, null, function(history) {
-            html = "<h1>"+upeople_identifier+"</h1>";
+            html = "<h4>"+upeople_identifier+"</h4>";
             html += "Start: "+history.first_date+" End: "+ history.last_date;
             if (ds.getName() == "scm") html += " Commits:" + history.commits;
             else if (ds.getName() == "its") html += " Closed:" + history.closed;
@@ -736,19 +743,22 @@ function DataSource(name, basic_metrics) {
         var data = ds.getGlobalData();
 
         html += "Total companies: " + data.companies +"<br>";
-        html += "Companies in 2006: " + data.companies_2006+"<br>";
-        html += "Companies in 2009: " + data.companies_2009+"<br>";
-        html += "Companies in 2012: " + data.companies_2012+"<br>";
+        if (data.companies_2006)
+            html += "Companies in 2006: " + data.companies_2006+"<br>";
+        if (data.companies_2009)
+            html += "Companies in 2009: " + data.companies_2009+"<br>";
+        if (data.companies_2012)
+            html += "Companies in 2012: " + data.companies_2012+"<br>";
 
         $("#"+divid).append(html);
     };
     
-    this.displaySubReportSummary = function(report, divid, item, ds) {};
+    this.displaySummary = function(report, divid, item, ds) {};
     
     this.displayReposSummary = function(divid, ds) {
         var html = "";
         var data = ds.getGlobalData();
-        html += "Total repositories: " + data.repositories +"<br>";
+        html += "Total repositories: " + data[ds.getName()+"_repositories"] +"<br>";
         $("#"+divid).append(html);
     };
     
@@ -764,14 +774,14 @@ function DataSource(name, basic_metrics) {
     };
 
     this.displayTimeToAttention = function(div_id, column, labels, title) {
-        var labels = true;
-        var title = "Time to Attention " + column;
+        labels = true;
+        title = "Time to Attention " + column;
         Viz.displayTimeToAttention(div_id, this.getTimeToAttentionData(), column, labels, title);
     };
     
     this.displayTimeToFix = function(div_id, column, labels, title) {
-        var labels = true;
-        var title = "Time to Fix " + column;
+        labels = true;
+        title = "Time to Fix " + column;
         Viz.displayTimeToFix(div_id, this.getTimeToFixData(), column, labels, title);
     };
     
@@ -803,20 +813,21 @@ function DataSource(name, basic_metrics) {
         }
     };
     
-    this.envisionEvo = function(div_id, history, relative) {
+    this.envisionEvo = function(div_id, history, relative, legend_show) {
         config = Report.getConfig();
         var options = Viz.getEnvisionOptions(div_id, history, this.getName(),
                 Report.getConfig()[this.getName()+"_hide"]);
+        options.legend_show = legend_show;
         
         if (relative)
-            Viz.addRelativeValues(options.data, this.getMainMetric());
+            DataProcess.addRelativeValues(options.data, this.getMainMetric());
         
         new envision.templates.Envision_Report(options, [ this ]);
     };
     
-    this.displayEvo = function(divid, relative) {
+    this.displayEvo = function(divid, relative, legend_show) {
         var projects_full_data = Report.getProjectsDataSources();
         
-        this.envisionEvo(divid, projects_full_data, relative);
+        this.envisionEvo(divid, projects_full_data, relative, legend_show);
     };    
 }

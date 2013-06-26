@@ -9,7 +9,7 @@
     <meta name="description" content="Bitergia company website" />
     <link rel="stylesheet" type="text/css" href="theme.css" />
     <!--<link rel="stylesheet" type="text/css" id="theme" href="VizGrimoireJS/vizgrimoire.css" />-->
-    <script type="text/javascript" src="VizGrimoireJS/src/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="menu.js"></script>
     <title>Bitergia Summary Report</title>
     <style type="text/css">
@@ -44,9 +44,9 @@
 
       <div style="float:left;width:470px;heigth:550px;">
         <h1>Last Activity Tracker</h1>
-        <div id="activity" style="float:left;"></div>
-        <div id="activitymonth" style="float:left;margin-left:20px;"></div>
-        <div id="activityquarter" style="float:left;margin-left:20px;"></div>
+        <div class="activity" data-period="Week" style="float:left;"></div>
+        <div class="activity" data-period="Month" style="float:left;margin-left:10px;"></div>
+        <div class="activity" data-period="Quarter" style="float:left;margin-left:10px;"></div>
       </div>
 
       <!--  FLOTR2 -->
@@ -55,11 +55,11 @@
 	
 	<div style="float:left;">	   
           <div style="float:left">
-	     <div id="scm-commits-flotr2" style="width:225px;margin-right:10px;float:left"></div>
+	     <div id="scm_commits-flotr2" style="width:225px;margin-right:10px;float:left"></div>
              <div><b>Commits:</b> source code changes</div>
           </div>
           <div style="float:left">
-	     <div id="scm-authors-flotr2" style="width:225px;float:left"></div>
+	     <div id="scm_authors-flotr2" style="width:225px;float:left"></div>
              <div><b>Authors:</b> original developer </br>
                      (in some cases w/o commit rights) </div>
           </div>
@@ -68,11 +68,11 @@
 	
 	<div style="float:left">
           <div style="float:left">
-  	    <div id="mls-sent-flotr2" style="width:225px;margin-right:10px;float:left"></div>
+  	    <div id="mls_sent-flotr2" style="width:225px;margin-right:10px;float:left"></div>
             <div><b>Sent:</b> total emails per week</div>
           </div>
           <div style="float:left">
-	    <div id="mls-senders-flotr2" style="width:225px;float:left"></div>        					
+	    <div id="mls_senders-flotr2" style="width:225px;float:left"></div>        					
             <div><b>Senders:</b> people sending emails </div>
           
          </div>
@@ -80,12 +80,12 @@
 
         <div style="float:left">
           <div style="float:left">
-            <div id="its-opened-flotr2" style="width:225px;margin-right:10px;float:left"></div>
+            <div id="its_opened-flotr2" style="width:225px;margin-right:10px;float:left"></div>
             <div><b>Opened:</b> tickets opened </div>
           </div>
 
           <div style="float:left">
-            <div id="its-openers-flotr2" style="width:225px;float:left"></div>                                            
+            <div id="its_openers-flotr2" style="width:225px;float:left"></div>                                            
             <div><b>Openers:</b> people opening tickets</div>
           </div>
         </div>
@@ -103,6 +103,6 @@
     <div id="footer"></div>
     
     
-    <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script>
+    <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.js"></script>
   </body>
 </html>

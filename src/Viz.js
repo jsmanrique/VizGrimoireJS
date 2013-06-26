@@ -49,8 +49,6 @@ var Viz = {};
     Viz.displayEvoSummary = displayEvoSummary;
     Viz.displayTimeToFix = displayTimeToFix;
     Viz.displayTimeToAttention = displayTimeToAttention;
-    Viz.filterYear = filterYear;
-    Viz.filterDates = filterDates;
     Viz.displayMetricSubReportLines = displayMetricSubReportLines;
     Viz.displayRadarActivity = displayRadarActivity;
     Viz.displayRadarCommunity = displayRadarCommunity;
@@ -58,41 +56,21 @@ var Viz = {};
     Viz.drawMetric = drawMetric;
     Viz.getEnvisionOptions = getEnvisionOptions;
     Viz.checkBasicConfig = checkBasicConfig;
-    Viz.mergeConfig = mergeConfig;
     Viz.displayGridMetric = displayGridMetric;
     Viz.displayGridMetricSelector = displayGridMetricSelector;
     Viz.displayGridMetricAll = displayGridMetricAll;
     // Working fixing gridster issue: redmine issue 991
     Viz.gridster_debug = gridster_debug;
 
-    function mergeConfig(config1, config2) {
-        var new_config = {};
-        $.each(config1, function(entry, value) {
-            new_config[entry] = value;
-        });
-        $.each(config2, function(entry, value) {
-            new_config[entry] = value;
-        });
-        return new_config;
-    }
-
     function findMetricDoer(history, metric_id) {
-    	var doer = '';
-    	$.each(Report.getAllMetrics(), function(name,metric) {
-    		if (metric.action === metric_id) {
-    			doer = metric.column;
-    			return false;
-    		}
-    	});
-    	return doer;
-    }
-
-    function hideEmail(email) {
-        var clean = email;
-        if (email.indexOf("@") > -1) {
-            clean = email.split('@')[0];
-        }
-        return clean;
+        var doer = '';
+        $.each(Report.getAllMetrics(), function(name, metric) {
+            if (metric.action === metric_id) {
+                doer = metric.column;
+                return false;
+            }
+        });
+        return doer;
     }
 
     function drawMetric(metric_id, divid) {
@@ -127,7 +105,12 @@ var Viz = {};
         for ( var i = 0; i < history[metric_id].length; i++) {
             var metric_value = history[metric_id][i];
             var doer_value = history[doer][i];
-            table += "<tr><td>"+hideEmail(doer_value)+"</td><td>";
+            var doer_id = history.id[i];
+            table += "<tr><td>";
+            // table += "<a href='people.html?id="+doer_id+"&name="+doer_value+"'>";
+            table += DataProcess.hideEmail(doer_value) + "</a></td><td>";
+            // table += "</a>";
+            table += "</td><td>";
             table += metric_value + "</td></tr>";
         }
         table += "</tbody></table>";
@@ -144,21 +127,22 @@ var Viz = {};
         if (doer === undefined) doer = findMetricDoer(history, metric_id);
         var table = displayTopMetricTable(history, metric_id, doer);
         // var doer = findMetricDoer(history, metric_id);
+        var div = null;
 
         if (table === undefined) return;
         if (titles === false) {
-            var div = $("#" + div_id);
+            div = $("#" + div_id);
             div.append(table);
             return;
         }
 
-        var top_metric_id = metric.column;
+        var top_metric_id = metric.divid;
         var div_graph = '';
         var new_div = '';
-        new_div += "<div class='info-pill'>";
-        new_div += "<h1>";
+        // new_div += "<div class='info-pill'>";
+        new_div += "<h4>";
         // if (project) new_div += project +" ";
-        new_div += "Top " + top_metric_id + " " + metric_period + " </h1>";
+        new_div += "Top " + top_metric_id + " " + metric_period + " </h4>";
         if (graph) {
             div_graph = "top-" + graph + "-" + doer + "-";
             div_graph += metric_id + "-" + metric_period;
@@ -167,9 +151,9 @@ var Viz = {};
         }
 
         new_div += table;
-        new_div += "</div>";
+        // new_div += "</div>";
 
-        var div = $("#" + div_id);
+        div = $("#" + div_id);
         div.append(new_div);
         if (graph)
             displayBasicChart(div_graph, history[doer], history[metric_id],
@@ -208,9 +192,9 @@ var Viz = {};
             // TODO: projects should be included in data not in a different array
             if (projects)
                 lines_data[j] = {label:projects[j], 
-                    data:fillHistoryLines(full_history_id, lines_data[j])};
+                    data:DataProcess.fillHistoryLines(full_history_id, lines_data[j])};
             else
-                lines_data[j] = {data:fillHistoryLines(full_history_id, lines_data[j])};
+                lines_data[j] = {data:DataProcess.fillHistoryLines(full_history_id, lines_data[j])};
         }
 
         // TODO: Hack to have lines_data visible in track/tickFormatter
@@ -222,7 +206,7 @@ var Viz = {};
                 tickFormatter : function(x) {
                     var index = null;
                     for ( var i = 0; i < full_history_id.length; i++) {
-                        if (parseInt(x)===full_history_id[i]) {
+                        if (parseInt(x, null)===full_history_id[i]) {
                             index = i; break;}
                     }
                     return dates[index];
@@ -264,10 +248,29 @@ var Viz = {};
             
         graph = Flotr.draw(container, lines_data, config);
     }
+    
+    
+    function showHelp(div_id, metrics) {
+        var all_metrics = Report.getAllMetrics();
+        var help ='<a href="#" class="help"';
+        var content = "";
+        var addContent = function (id, value) {
+            if (metrics[i] === id) {
+                content += id +":"+ value.desc + "<br>";
+                return false;
+            }            
+        };
+        for (var i=0; i<metrics.length; i++) {
+            $.each (all_metrics, addContent);
+        }         
+        help += 'data-content="'+content+'" data-html="true">'; 
+        help += '<img src="qm_15.png"></a>';
+        $('#'+div_id).before(help);
+    }
 
     function displayMetricsLines(div_id, metrics, history, title, config) {
+        if (!(config && config.help === false)) showHelp(div_id, metrics);
         var lines_data = [];
-
         $.each(metrics, function(id, metric) {
             if (!history[metric]) return;
             var mdata = [[],[]];
@@ -277,35 +280,7 @@ var Viz = {};
             lines_data.push({label:metric, data:mdata});
         });
         displayDSLines(div_id, history, lines_data, title, config);
-    };
-    
-    function filterDates(start_id, end_id, history) {        
-        var history_dates = {};
-        $.each(history, function(name, data) {
-            history_dates[name] = [];                
-            $.each(data, function(i, value) {
-                // var id = history.id[i];
-                // TODO: week should be id
-                // var id = history.week[i];
-                var id = history.unixtime[i];
-                if (id > start_id && id <= end_id)
-                    history_dates[name].push(value);
-            });
-        });
-        return history_dates;
-    }
-    
-    function filterYear(year, history) {
-        // var day_msecs = 1000*60*60*24;
-        year = parseInt(year);
-        //var min_id = 12*year, max_id = 12*(year+1);
-        // var min_id = (new Date(year.toString()).getTime())/(day_msecs);
-        // var max_id = (new Date((year+1).toString()).getTime())/(day_msecs);
-        var min_id = new Date(year.toString()).getTime();
-        var max_id = new Date((year+1).toString()).getTime();
 
-        var history_year = filterDates(min_id, max_id, history);
-        return history_year;
     }
     
     function displayMetricSubReportLines(div_id, metric, items, title, 
@@ -317,7 +292,7 @@ var Viz = {};
             if (data === undefined) return false;
             if (data[metric] === undefined) return false;
             
-            if (start && end) data = filterDates(start, end, data);
+            if (start && end) data = DataProcess.filterDates(start, end, data);
             
             var cdata = [[], []];
             for (var i=0; i<data.id.length; i++ ) {
@@ -330,7 +305,7 @@ var Viz = {};
         if (lines_data.length === 0) return;
         
         displayDSLines(div_id, history, lines_data, title, config);
-    };
+    }
     
     // Lines from the same Data Source
     // TODO: Probably we should also fill history
@@ -340,14 +315,14 @@ var Viz = {};
         var config = {
             title : title,
             legend: {
-              show: false,
+              show: false
             },
             xaxis : {
                 minorTickFreq : 4,
                 tickFormatter : function(x) {
                     var index = null;
                     for ( var i = 0; i < history.id.length; i++) {
-                        if (parseInt(x)===history.id[i]) {
+                        if (parseInt(x, null)===history.id[i]) {
                             index = i; break;}
                     }
                     return history.date[index];
@@ -359,7 +334,6 @@ var Viz = {};
                     return parseInt(y, 10) + "";
                 }
             },
-
             grid : {
                 show : false
             },
@@ -385,9 +359,17 @@ var Viz = {};
             if (config_metric.lines && config_metric.lines.stacked)
                 config.lines =
                     {stacked:true, fill:true, fillOpacity: 1, fillBorder:true, lineWidth:0.01};
-            if (! config_metric.show_labels) {
+            if (!config_metric.show_labels) {
                 config.xaxis.showLabels = false;
                 config.yaxis.showLabels = false;
+            }
+            if (config_metric.show_grid === false) {
+                config.grid.verticalLines = false;
+                config.grid.horizontalLines = false;
+                config.grid.outlineWidth = 0;
+            }
+            if (config_metric.show_mouse === false) {
+                config.mouse.track = false;
             }
         }
         graph = Flotr.draw(container, lines_data, config);
@@ -401,20 +383,23 @@ var Viz = {};
             horizontal = true;
 
         var container = document.getElementById(divid);
+        var legend_div = null;
+        if (config_metric && config_metric.legend && config_metric.legend.container)
+            legend_div = $('#'+config_metric.legend.container);
         var chart_data = [], i;
 
         if (!horizontal) {
             for (i = 0; i < labels.length; i++) {
                 chart_data.push({
                     data : [ [ i, data[i] ] ],
-                    label : hideEmail(labels[i])
+                    label : DataProcess.hideEmail(labels[i])
                 });
             }
         } else {
             for (i = 0; i < labels.length; i++) {
                 chart_data.push({
                     data : [ [ data[i], i ] ],
-                    label : hideEmail(labels[i])
+                    label : DataProcess.hideEmail(labels[i])
                 });
             }
         }
@@ -436,20 +421,21 @@ var Viz = {};
                 min : 0
             },
             mouse : {
+                container: legend_div,
                 track : true,
                 trackFormatter : function(o) {
                     var i = 'x';
                     if (horizontal)
                         i = 'y';
-                    return hideEmail(labels[parseInt(o[i], 10)]) + ": "
+                    return DataProcess.hideEmail(labels[parseInt(o[i], 10)]) + ": "
                             + data[parseInt(o[i], 10)];
                 }
             },
             legend : {
                 show : false,
                 position : 'se',
-                backgroundColor : '#D2E8FF'
-            // container: container_legend
+                backgroundColor : '#D2E8FF',
+                container: legend_div
             }
         };
 
@@ -469,7 +455,8 @@ var Viz = {};
             }
 
             if (config_metric && config_metric.show_legend !== false)
-                config.legend = {show:true, position: 'ne'};
+                config.legend = {show:true, position: 'ne', 
+                    container: legend_div};
             
             // TODO: Color management should be defined
             //var defaults_colors = [ '#ffa500', '#ffff00', '#00ff00', '#4DA74D',
@@ -492,24 +479,13 @@ var Viz = {};
         graph = Flotr.draw(container, chart_data, config);
     }
 
-    function getDSMetric(metric_id) {
-        var ds = null;
-        $.each(Report.getDataSources(), function(index, DS) {
-            $.each(DS.getMetrics(), function(i, metric) {
-                if (i === metric_id)
-                    ds = DS;
-            });
-        });
-        return ds;
-    }
-    
     // The two metrics should be from the same data source
     function displayBubbles(divid, metric1, metric2, radius) {
 
         var container = document.getElementById(divid);
 
-        var DS = getDSMetric(metric1);
-        var DS1 = getDSMetric(metric2);
+        var DS = Report.getMetricDS(metric1)[0];
+        var DS1 = Report.getMetricDS(metric2)[0];
 
         var bdata = [];
 
@@ -535,15 +511,15 @@ var Viz = {};
         for (var i=0; i<full_data.length; i++) {
             // if empty data return
             if (full_data[i] instanceof Array) return;
-            dates = Viz.fillDates(dates, [full_data[i].id, full_data[i].date]);
+            dates = DataProcess.fillDates(dates, [full_data[i].id, full_data[i].date]);
         }
 
         for ( var j = 0; j < full_data.length; j++) {
             var serie = [];
             var data = full_data[j];
-            var data1 = Viz.fillHistory(dates[0], [data.id, data[metric1]]);
-            var data2 = Viz.fillHistory(dates[0], [data.id, data[metric2]]);
-            for ( var i = 0; i < dates[0].length; i++) {
+            var data1 = DataProcess.fillHistory(dates[0], [data.id, data[metric1]]);
+            var data2 = DataProcess.fillHistory(dates[0], [data.id, data[metric2]]);
+            for (i = 0; i < dates[0].length; i++) {
                 serie.push( [ dates[0][i], data1[1][i], data2[1][i] ]);
             }
             bdata.push({label:projects[j],data:serie});
@@ -637,7 +613,7 @@ var Viz = {};
                 var value =  data[j].data[i][1];
                 if (value>max) {
                     max = value;
-                    max = parseInt(max * (1+border));
+                    max = parseInt(max * (1+border),null);
                 }
             }
         }
@@ -681,9 +657,10 @@ var Viz = {};
         var radar_data = [];
         var projects = [];
 
-        for ( var i = 0; i < metrics.length; i++) {
+        var i = 0, j = 0;
+        for (i = 0; i < metrics.length; i++) {
             var DS = Report.getMetricDS(metrics[i]);
-            for (var j=0; j<DS.length; j++) {
+            for (j=0; j<DS.length; j++) {
                 if (!data[j]) {
                     data[j] = [];
                     projects[j] = DS[j].getProject();
@@ -693,7 +670,7 @@ var Viz = {};
             ticks.push([ i, DS[0].getMetrics()[metrics[i]].name ]);
         }
 
-        for (var j=0; j<data.length; j++) {            
+        for (j=0; j<data.length; j++) {            
             radar_data.push({
                 label : projects[j],
                 data : data[j]
@@ -704,14 +681,14 @@ var Viz = {};
     }
 
     function displayRadarCommunity(div_id) {
-        var metrics = [ 'committers', 'authors', 'openers', 'closers',
-                'changers', 'senders' ];
+        var metrics = [ 'scm_committers', 'scm_authors', 'its_openers', 'its_closers',
+                'its_changers', 'mls_senders' ];
         displayRadar(div_id, metrics);
     }
 
     function displayRadarActivity(div_id) {
-        var metrics = [ 'commits', 'files', 'opened', 'closed', 'changed',
-                'sent' ];
+        var metrics = [ 'scm_commits', 'scm_files', 'its_opened', 'its_closed', 'its_changed',
+                'mls_sent' ];
         displayRadar(div_id, metrics);
     }
     
@@ -723,25 +700,29 @@ var Viz = {};
         displayTimeTo(div_id, ttf_data, column, labels, title);
     }
 
-    function displayTimeTo(div_id, ttf_data, column, labels, title) {       
+    function displayTimeTo(div_id, ttf_data, column, labels, title) {
+        // We can have several columns (metrics)
+        var metrics = column.split(",");
         var history = ttf_data.data; 
-        if (!history[column]) return;
+        if (!history[metrics[0]]) return;
         var new_history = {};
         new_history.date = history.date;
         // We prefer the data in days, not hours
         $.each(history, function(name, data) {
-            if (name != column) return;
+            if ($.inArray(name, metrics) === -1) return;
             new_history[name] = [];
             for (var i=0; i<data.length; i++) {
-                new_history[name].push(parseInt(data[i])/24);
+                new_history[name].push((parseInt(data[i],null)/24).toFixed(2));
             }            
         });
         //  We need and id column
         new_history.id=[];
-        for (var i=0; i<history[column].length;i++) {
+        for (var i=0; i<history[metrics[0]].length;i++) {
             new_history.id.push(i);
         }
-        Viz.displayBasicLines(div_id, new_history, column, labels, title);
+        // Viz.displayBasicLines(div_id, new_history, metrics[0], labels, title);
+        var config = {show_legend: true, show_labels: true};
+        displayMetricsLines(div_id, metrics, new_history, column, config);
     }
 
     // Each metric can have several top: metric.period
@@ -798,7 +779,7 @@ var Viz = {};
         var project = data_source.getProject();
         var metric = data_source.getMetrics()[metric_id];
         var graph = null;
-        if (!data_source.getGlobalTopData()[metric_id]) return
+        if (!data_source.getGlobalTopData()[metric_id]) return;
         data = data_source.getGlobalTopData()[metric_id][period];
         displayTopMetric(div, project, metric, period, data, graph, titles);
     }
@@ -855,84 +836,7 @@ var Viz = {};
            });
         });
     }
-
-    Viz.fillDates = function (dates_orig, more_dates) {
-        
-        if (dates_orig[0].length === 0) return more_dates;
-
-        // [ids, values]
-        var new_dates = [[],[]];
-        
-        // Insert older dates
-        if (dates_orig[0][0]> more_dates[0][0]) {
-            for (var i=0; i< more_dates[0].length; i++) {
-                new_dates[0][i] = more_dates[0][i];
-                new_dates[1][i] = more_dates[1][i];
-            }
-        }
-
-        // Push already existing dates
-        for (var i=0; i< dates_orig[0].length; i++) {
-            pos = new_dates[0].indexOf(dates_orig[0][i]);
-            if (pos === -1) {
-                new_dates[0].push(dates_orig[0][i]);
-                new_dates[1].push(dates_orig[1][i]);
-            }
-        }
-        
-        // Push newer dates
-        if (dates_orig[0][dates_orig[0].length-1] < 
-                more_dates[0][more_dates[0].length-1]) {
-            for (var i=0; i< more_dates[0].length; i++) {
-                pos = new_dates[0].indexOf(more_dates[0][i]);
-                if (pos === -1) {
-                    new_dates[0].push(more_dates[0][i]);
-                    new_dates[1].push(more_dates[1][i]);
-                }
-            }
-        }
-        
-        return new_dates;
-
-    };
     
-    Viz.fillHistory = function (hist_complete_id, hist_partial) {
-        // [ids, values]
-        var new_history = [ [], [] ];
-        for ( var i = 0; i < hist_complete_id.length; i++) {
-            pos = hist_partial[0].indexOf(hist_complete_id[i]);
-            new_history[0][i] = hist_complete_id[i];
-            if (pos != -1) {
-                new_history[1][i] = hist_partial[1][pos];
-            } else {
-                new_history[1][i] = 0;
-            }
-        }
-        return new_history;
-    };
-    
-    // Envision and Flotr2 formats are different.
-    function fillHistoryLines(hist_complete_id, hist_partial) {        
-        // [ids, values]
-        var old_history = [ [], [] ];
-        var new_history = [ [], [] ];
-        var lines_history = [];
-        
-        for ( var i = 0; i < hist_partial.length; i++) {
-            // ids
-            old_history[0].push(hist_partial[i][0]);
-            // values
-            old_history[1].push(hist_partial[i][1]);
-        }
-        
-        new_history = Viz.fillHistory(hist_complete_id, old_history);
-        
-        for ( var i = 0; i < hist_complete_id.length; i++) {
-            lines_history.push([new_history[0][i],new_history[1][i]]);
-        }
-        return lines_history;
-    }
-
     // TODO: Remove when mls lists are multiproject
     Viz.getEnvisionOptionsMin = function (div_id, history, hide) {
         var firstMonth = history.id[0],
@@ -1018,7 +922,7 @@ var Viz = {};
         $.each(projects_data, function(project, data) {
             $.each(data, function(index, DS) {
                 if (ds_name && ds_name !== DS.getName()) return;
-                dates = Viz.fillDates(dates, 
+                dates = DataProcess.fillDates(dates, 
                         [DS.getData().id, DS.getData().date]);
             });
         });
@@ -1038,7 +942,7 @@ var Viz = {};
             yTickFormatter : function(n) {
                 return n + '';
             },
-            // Initial selection
+            // Initial selection: disabled
             selection : {
                 data : {
                     x : {
@@ -1050,38 +954,44 @@ var Viz = {};
         };        
         
         options.data = {
-            summary : Viz.fillHistory(dates[0], summary_data),
+            summary : DataProcess.fillHistory(dates[0], summary_data),
             markers : markers,
             dates : dates[1],
             envision_hide : hide,
             main_metric : main_metric
         };
 
-        for (var metric in basic_metrics) {
-            $.each(projects_data, function(project, pdata) {
-                $.each(pdata, function(index, ds) {
-                    var data = ds.getData();
-                    if (data[metric] === undefined) return;
-                    if (options.data[metric] === undefined) 
-                        options.data[metric] = [];
-                    var full_data =
-                        Viz.fillHistory(dates[0], [data.id, data[metric]]);
-                    if (metric === main_metric) {
-                        options.data[metric].push(
-                                {label:project, data:full_data});
-                        if (data[metric+"_relative"] === undefined) return;
-                        if (options.data[metric+"_relative"] === undefined) 
-                            options.data[metric+"_relative"] = [];
-                        full_data = Viz.fillHistory(dates[0],
-                                    [data.id, data[metric+"_relative"]]);
-                        options.data[metric+"_relative"].push(
-                                {label:project, data:full_data});
-                    } else {
-                        //options.data[metric].push({label:"", data:full_data});
-                        options.data[metric].push({label:project, data:full_data});
-                    }
-                });
-            });
+        var project = null;
+        var buildProjectInfo = function(index, ds) {
+            var data = ds.getData();
+            if (data[metric] === undefined) return;
+            if (options.data[metric] === undefined) 
+                options.data[metric] = [];
+            var full_data =
+                DataProcess.fillHistory(dates[0], [data.id, data[metric]]);
+            if (metric === main_metric) {
+                options.data[metric].push(
+                        {label:project, data:full_data});
+                if (data[metric+"_relative"] === undefined) return;
+                if (options.data[metric+"_relative"] === undefined) 
+                    options.data[metric+"_relative"] = [];
+                full_data = DataProcess.fillHistory(dates[0],
+                            [data.id, data[metric+"_relative"]]);
+                options.data[metric+"_relative"].push(
+                        {label:project, data:full_data});
+            } else {
+                //options.data[metric].push({label:"", data:full_data});
+                options.data[metric].push({label:project, data:full_data});
+            }                
+        };
+        
+        var buildProjectsInfo = function(name, pdata) {
+            project = name;
+            $.each(pdata, buildProjectInfo);
+        };
+
+        for (var metric in basic_metrics) {            
+            $.each(projects_data, buildProjectsInfo);
         }
         
         options.trackFormatter = function(o) {
@@ -1097,7 +1007,7 @@ var Viz = {};
             for (var metric in basic_metrics) {
                 if (options.data[metric] === undefined) continue;
                 if ($.inArray(metric,options.data.envision_hide) > -1) continue;                                                
-                for (var j=0;j<projects.length; j++) {
+                for (j=0;j<projects.length; j++) {
                     if (options.data[metric][j] === undefined) continue;
                     var project_name = options.data[metric][j].label;
                     var pdata = options.data[metric][j].data;
@@ -1108,7 +1018,7 @@ var Viz = {};
             
             value  = "<table><tr><td align='right'>"+dates[1][index];
             value += "</td></tr><tr><td></td>";
-            for (var metric in basic_metrics) {
+            for (metric in basic_metrics) {
                 if (options.data[metric] === undefined) continue;
                 if ($.inArray(metric,options.data.envision_hide) > -1) 
                     continue;
@@ -1150,13 +1060,14 @@ var Viz = {};
     function displayBasicHTML(data, div_target, title, basic_metrics, hide,
             config, projs) {
         config = checkBasicConfig(config);
-        var new_div = '<div class="info-pill">';
-        new_div += '<h1>' + title + '</h1></div>';
+        //var new_div = '<div class="info-pill">';
+        var new_div = '<h4>' + title + '</h4>';
+        // new_div += '</div>';
         $("#" + div_target).append(new_div);
         for ( var id in basic_metrics) {
             var metric = basic_metrics[id];
-            if (data[0][metric.column] === undefined) continue;
-            if ($.inArray(metric.column, Report.getConfig()[hide]) > -1)
+            if (data[0][metric.divid] === undefined) continue;
+            if ($.inArray(metric.divid, Report.getConfig()[hide]) > -1)
                 continue;
             displayBasicMetricHTML(metric, data, div_target, config, projs);
         }
@@ -1230,6 +1141,7 @@ var Viz = {};
                 label = aux.pop();
                 if (label === '') label = aux.pop();
                 // item = item.substr(item.lastIndexOf("_") + 1);
+                label = label.replace('buglist.cgi?product=','');
             }
             else if (item.lastIndexOf("<") === 0)
                 label = MLS.displayMLSListName(item);
@@ -1245,11 +1157,11 @@ var Viz = {};
         if (!config.show_title)
             title = '';
 
-        var new_div = '<div class="info-pill">';
-        $("#" + div_target).append(new_div);
-        new_div = '<div id="flotr2_' + metric.column
-                + '" class="info-pill m0-box-div">';
-        new_div += '<h1>' + metric.name + '</h1>';
+        //var new_div = '<div class="info-pill">';
+        //$("#" + div_target).append(new_div);
+        new_div = '<div id="flotr2_' + metric.divid
+                + '" class="m0-box-div">';
+        new_div += '<h4>' + metric.name + '</h4>';
         if (config.realtime) {            
             new_div += '<div class="basic-metric-html" id="' + metric.divid;
             new_div += "_" + div_target;
@@ -1265,7 +1177,9 @@ var Viz = {};
             displayBasicLinesFile(metric.divid+"_"+div_target, config.json_ds, 
                     metric.column, config.show_labels, title, projs);
         else
-            displayBasicLines(metric.divid, data, metric.column,
+            // displayBasicLines(metric.divid, data, metric.column,
+            // TODO: temporal hack for ns metric name
+            displayBasicLines(metric.divid, data, metric.divid,
                     config.show_labels, title, projs);
     }
 
@@ -1276,8 +1190,10 @@ var Viz = {};
         var silent = true;
 
         if (config) {
-            size_x = config.size_x, size_y = config.size_y, col = config.col,
-                    row = config.row;
+            size_x = config.size_x;
+            size_y = config.size_y;
+            col = config.col;
+            row = config.row;
         }
 
         var divid = metric.divid + "_grid";
@@ -1355,41 +1271,12 @@ var Viz = {};
         $("#" + div_id).html(html);
     }
 
-    Viz.addRelativeValues = function (metrics_data, metric) {        
-        if (metrics_data[metric] === undefined) return;
-        metrics_data[metric+"_relative"] = [];
-        var added_values = [];
-        
-        $.each(metrics_data[metric], function(index, pdata) {
-            var metric_values = pdata.data[1];
-            for (var i = 0; i<metric_values.length;i++) {
-                if (added_values[i] === undefined)
-                    added_values[i] = 0;
-                added_values[i] += metric_values[i];
-            }
-        });
-        
-        $.each(metrics_data[metric], function(index, pdata) {
-            var val_relative = [];
-            for (var i = 0; i<pdata.data[0].length;i++) {
-                if (added_values[i] === 0) val_relative[i] = 0;
-                else {
-                    var rel_val = pdata.data[1][i]/added_values[i]*100;
-                    val_relative[i] = rel_val;
-                }
-            }
-            metrics_data[metric+"_relative"].push({
-                label: pdata.label,
-                data: [pdata.data[0],val_relative],
-            });
-        });        
-    };
-
-    function displayEvoSummary(div_id, relative) {
+    function displayEvoSummary(div_id, relative, legend_show) {
         var projects_full_data = Report.getProjectsDataSources();
         var config = Report.getConfig();
         var options = Viz.getEnvisionOptions(div_id, projects_full_data, null,
                 config.summary_hide);
+        options.legend_show = legend_show;
         if (relative) {
             // TODO: Improve main metric selection. Report.getMainMetric()
             $.each(projects_full_data, function(project, data) {
@@ -1397,7 +1284,7 @@ var Viz = {};
                     main_metric = DS.getMainMetric();
                 });
             });
-            Viz.addRelativeValues(options.data, main_metric);
+            DataProcess.addRelativeValues(options.data, main_metric);
         }                
         new envision.templates.Envision_Report(options);
     }

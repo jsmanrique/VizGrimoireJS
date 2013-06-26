@@ -10,7 +10,7 @@
 	    <!--<link rel="stylesheet" type="text/css" id="theme" href="VizGrimoireJS/vizgrimoire.css" />-->
             <link rel="stylesheet" type="text/css" href="theme.css" />
 	    <link rel="stylesheet" type="text/css" id="theme" href="custom.css" />
-        <script type="text/javascript" src="VizGrimoireJS/src/jquery-1.7.1.min.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/lib/jquery-1.7.1.min.js"></script>
         <script type="text/javascript" src="menu.js"></script>
         <title>OpenStack Development Dashboard</title>
         <style type="text/css">
@@ -33,12 +33,12 @@
                     <div>
                         <div id="info-pill" style="width:360px;height:170px;float:left;margin-bottom:15px;margin-righ:15px">
                              <div style="float:left;width:350px;height:150px" 
-                                  class="scm-flotr2-metrics" data-metrics="repositories" data-legend="false"></div>
+                                  class="scm-flotr2-metrics" data-metrics="scm_repositories" data-legend="false"></div>
                              <i><b>Active Source repositories per month</b></i>
                         </div>
                         <div id="info-pill" style="width:360px;height:170px;float:left;margin-bottom:15px;margin-righ:15px">
                              <div style="float:left;width:350px;height:150px" 
-                                  class="its-flotr2-metrics" data-metrics="repositories" data-legend="false"></div>
+                                  class="its-flotr2-metrics" data-metrics="its_repositories" data-legend="false"></div>
                              <i><b>Active Tickets repositories per month</b></i>
                         </div>              
                     </div>
@@ -145,15 +145,6 @@
          </div>
 		<div id="footer"></div>
 
-        <!-- <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script> -->
-        <script type="text/javascript" src="VizGrimoireJS/src/envision.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/DataSource.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/Loader.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/Report.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/ITS.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/MLS.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/SCM.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/Envision_Report.js"></script>
-        <script type="text/javascript" src="VizGrimoireJS/src/Viz.js"></script>
+        <script type="text/javascript" src="VizGrimoireJS/vizgrimoire.min.js"></script>
     </body>
 </html>

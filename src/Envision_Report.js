@@ -56,7 +56,7 @@
                     show: false,
                     backgroundColor : '#FFFFFF',
                     backgroundOpacity : 0
-                },
+                }
             }
         };
 
@@ -94,7 +94,7 @@
         $.each(metrics, function(metric, value) {
             config = default_config;
             if (value.envision)
-                config = Viz.mergeConfig(default_config,
+                config = DataProcess.mergeConfig(default_config,
                         value.envision);
             if ($.inArray(metric, global_data.envision_hide) === -1) {
                 viz[metric] = getEnvisionDefaultsGraph
@@ -105,7 +105,7 @@
                     viz[metric+"_relative"] = getEnvisionDefaultsGraph
                         ('report-' + DS.getName() + '-' + metric+"_relative", config);
                     viz[metric].config['lite-lines'] = {show:false};
-                    viz[metric].config['lines'] = {
+                    viz[metric].config.lines = {
                             lineWidth : 1,
                             show : true,
                             stacked: true,
@@ -229,8 +229,10 @@
 
         defaults.summary.data = data.summary;
 
-        // SHOW MOUSE LEGEND AND LEGEND
+        // SHOW MOUSE LEGEND AND LEGEND        
         defaults[main_metric].config.legend.show = true;
+        if (options.legend_show === false)
+            defaults[main_metric].config.legend.show = false;
         defaults[main_metric].config.mouse.trackFormatter = options.trackFormatter;
         if (options.xTickFormatter) {
             defaults.summary.config.xaxis.tickFormatter = options.xTickFormatter;
