@@ -849,6 +849,7 @@ var Report = {};
                 $.each(divs, function(id, div) {
                     var metrics = $(this).data('metrics');
                     config_metric.show_legend = false;
+                    config_metric.help = false;
                     if ($(this).data('legend'))
                         config_metric.show_legend = true;
                     div.id = metrics.replace(/,/g,"-")+"-flotr2-metrics-"+this.id;
