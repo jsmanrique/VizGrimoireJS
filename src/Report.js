@@ -1140,7 +1140,7 @@ Loader.data_ready_global(function() {
 Loader.data_ready(function() {
     Report.convertStudies();
     $("body").css("cursor", "auto");
-    $('.help').popover();
+    // $('.help').popover();
 });
 
 $(document).ready(function() {
