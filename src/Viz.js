@@ -264,7 +264,8 @@ var Viz = {};
             $.each (all_metrics, addContent);
         }         
         help += 'data-content="'+content+'" data-html="true">'; 
-        help += '<img src="qm_15.png"></a>';
+        //help += '<img src="qm_15.png"></a>';
+        help = '';
         $('#'+div_id).before(help);
     }
 
