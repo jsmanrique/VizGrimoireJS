@@ -639,8 +639,8 @@ function DataSource(name, basic_metrics) {
 
         $.each(sorted, function(id, item) {
             if (scm_and_its && (!(Report.getReposMap()[item]))) return;
-            list += "<div class='subreport-list' id='"+item+"-nav'>";
-            list += "<div style='float:left;'>";
+            list += "<div class='subreport-list' id='"+item+"-nav' style='height:175px'>";
+            list += "<div>";
             if (report === "companies") 
                 list += "<a href='company.html?company="+item+"'>";
             else if (report === "repos") {
