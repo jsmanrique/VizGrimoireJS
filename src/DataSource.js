@@ -684,7 +684,7 @@ function DataSource(name, basic_metrics) {
                 list +=" class='subreport-list-item'></div>";
             });
             list += "</div>";
-            list += "</div>"
+            list += "</div>";
         });
         $("#"+div_id).append(list);
         // Draw the graphs
