@@ -640,7 +640,7 @@ function DataSource(name, basic_metrics) {
         $.each(sorted, function(id, item) {
             if (scm_and_its && (!(Report.getReposMap()[item]))) return;
             list += "<div class='subreport-list' id='"+item+"-nav'>";
-            list += "<div style='float:left'>";
+            list += "<div style='float:left;'>";
             if (report === "companies") 
                 list += "<a href='company.html?company="+item+"'>";
             else if (report === "repos") {
@@ -678,11 +678,13 @@ function DataSource(name, basic_metrics) {
             list += "</strong> +info</a>";
             list += "<br><a href='#nav'>^</a>";
             list += "</div>";
+            list += "<div style='height:150px'>"; 
             $.each(metrics, function(id, metric) {
                 list += "<div id='"+item+"-"+metric+"'";
                 list +=" class='subreport-list-item'></div>";
             });
             list += "</div>";
+            list += "</div>"
         });
         $("#"+div_id).append(list);
         // Draw the graphs
